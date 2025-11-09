@@ -18,7 +18,6 @@ const RANGE_CFG: Record<Range, { bucketMs: number; windowMs: number; label: stri
   "1h": { bucketMs: 60_000, windowMs: 3_600_000, label: "1h (≥60s buckets, adaptive)" },
 };
 
-// Small FPS/memory badge
 function InlinePerfBox() {
   const [fps, setFps] = useState(0);
   const [mem, setMem] = useState<number | null>(null);
@@ -51,7 +50,6 @@ function InlinePerfBox() {
   );
 }
 
-// Card shell for each chart
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section style={{
@@ -65,17 +63,15 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 }
 
 export default function DashboardPage() {
-  const raw = useDataStream(100); // new point every 100ms
+  const raw = useDataStream(100);
   const [range, setRange] = useState<Range>("1m");
   const { bucketMs, windowMs, label } = RANGE_CFG[range];
 
-  // Filter state (value range)
   const [filters, setFilters] = useState<{ valueMin: number; valueMax: number }>({
     valueMin: -100,
     valueMax: 100,
   });
 
-  // Compute current domain from RAW stream (min/max of visible window)
   const { domainMin, domainMax } = useMemo(() => {
     if (raw.length === 0) return { domainMin: -100, domainMax: 100 };
     let min = Infinity, max = -Infinity;
@@ -85,12 +81,10 @@ export default function DashboardPage() {
       if (v > max) max = v;
     }
     if (!Number.isFinite(min) || !Number.isFinite(max)) return { domainMin: -100, domainMax: 100 };
-    // Expand a tiny bit so sliders feel nicer
     const pad = (max - min) * 0.05 || 1;
     return { domainMin: Math.floor(min - pad), domainMax: Math.ceil(max + pad) };
   }, [raw]);
 
-  // Filtered arrays
   const filteredRaw = useMemo(
     () => raw.filter(p => p.value >= filters.valueMin && p.value <= filters.valueMax),
     [raw, filters.valueMin, filters.valueMax]
@@ -120,7 +114,6 @@ export default function DashboardPage() {
   return (
     <div style={{ padding: "24px 16px" }}>
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-        {/* Header */}
         <header style={{ marginBottom: 16 }}>
           <h1 style={{ margin: 0, fontSize: 36, fontWeight: 700 }}>Dashboard</h1>
           <div style={{ marginTop: 6, color: "#bbb" }}>
@@ -135,7 +128,6 @@ export default function DashboardPage() {
           </div>
         </header>
 
-        {/* Filters */}
         <section style={{ marginBottom: 16 }}>
           <FilterPanel
             valueMin={filters.valueMin}
@@ -144,16 +136,11 @@ export default function DashboardPage() {
             domainMax={domainMax}
             totalCount={raw.length}
             filteredCount={filteredRaw.length}
-            onChange={({ valueMin, valueMax }) =>
-              setFilters((f) => ({ ...f, valueMin, valueMax }))
-            }
-            onReset={() =>
-              setFilters({ valueMin: domainMin, valueMax: domainMax })
-            }
+            onChange={({ valueMin, valueMax }) => setFilters((f) => ({ ...f, valueMin, valueMax }))}
+            onReset={() => setFilters({ valueMin: domainMin, valueMax: domainMax })}
           />
         </section>
 
-        {/* Grid layout — 2 columns on wide screens, 1 on narrow */}
         <div
           style={{
             display: "grid",
@@ -188,13 +175,11 @@ export default function DashboardPage() {
 
           <Card title="Heatmap">
             <div style={{ width: "100%", height: 280 }}>
-              {/* Heatmap uses FILTERED RAW for density */}
               <Heatmap data={filteredRaw} windowMs={windowMs} cols={480} rows={80} />
             </div>
           </Card>
         </div>
 
-        {/* Virtualized table */}
         <section style={{ marginTop: 16 }}>
           <h2 style={{ fontSize: 16, margin: "0 0 8px" }}>Raw Stream (Virtualized)</h2>
           <div style={{ height: 360 }}>
