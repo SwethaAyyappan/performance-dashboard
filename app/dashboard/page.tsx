@@ -63,9 +63,11 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 }
 
 export default function DashboardPage() {
-  const raw = useDataStream(100);
   const [range, setRange] = useState<Range>("1m");
+  const [rate, setRate] = useState<number>(100); // ms per update (data load control)
   const { bucketMs, windowMs, label } = RANGE_CFG[range];
+
+  const raw = useDataStream(rate);
 
   const [filters, setFilters] = useState<{ valueMin: number; valueMax: number }>({
     valueMin: -100,
@@ -121,10 +123,31 @@ export default function DashboardPage() {
             <br />
             Raw: {raw.length} &nbsp;|&nbsp; Filtered: {filteredRaw.length} &nbsp;|&nbsp; Aggregated: {aggregated.length}
           </div>
-          <div style={{ marginTop: 10 }}>
+          <div style={{ marginTop: 10, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
             <RangeButton value="1m" />
             <RangeButton value="5m" />
             <RangeButton value="1h" />
+
+            <label style={{ color: "#bbb", display: "flex", alignItems: "center", gap: 8 }}>
+              Stream rate:
+              <select
+                value={rate}
+                onChange={(e) => setRate(Number(e.target.value))}
+                style={{
+                  padding: "6px 8px",
+                  background: "#111",
+                  color: "#eee",
+                  border: "1px solid #444",
+                  borderRadius: 6,
+                  cursor: "pointer"
+                }}
+              >
+                <option value={50}>Very Fast (50ms)</option>
+                <option value={100}>Fast (100ms)</option>
+                <option value={300}>Medium (300ms)</option>
+                <option value={1000}>Slow (1000ms)</option>
+              </select>
+            </label>
           </div>
         </header>
 
